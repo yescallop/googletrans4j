@@ -16,6 +16,6 @@ public class TokenTest {
                         .build(),
                 "translate.google.cn"
         );
-        System.out.println(ta.acquire("test"));
+        System.out.println(ta.acquire("测试：这里是Scallop"));
     }
 }
