@@ -8,7 +8,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 /**
  * @author Scallop Ye
@@ -32,7 +31,7 @@ public class TokenAcquirer {
     }
 
     private void updateTkk() throws IOException, InterruptedException {
-        long curHours = System.currentTimeMillis() / 3600000;
+        int curHours = (int) (System.currentTimeMillis() / 3600000);
         if (curHours == tkk[0])
             return;
 
@@ -54,7 +53,7 @@ public class TokenAcquirer {
 
     private String calc(String text) {
         int len = text.length();
-        IntStream.Builder e = IntStream.builder();
+        Reducer e = new Reducer(tkk[0]);
 
         for (int g = 0; g < len; g++) {
             int h = text.codePointAt(g);
@@ -79,13 +78,10 @@ public class TokenAcquirer {
             }
         }
 
-        int a = e.build()
-                .reduce(tkk[0], (b, c) -> uo(b + c, "+-a^+6"));
-        a = uo(a, "+-3^+b+-f");
+        int a = e.get();
         a ^= tkk[1];
-        long res = a < 0 ?  (a & 2147483647) + 2147483648L : a;
-        res %= 1E6;
-        return res + "." + (res ^ tkk[0]);
+        a = (int) ((a & 0xffffffffL) % 1000000);
+        return a + "." + (a ^ tkk[0]);
     }
 
     private static int uo(int a, String b) {
@@ -97,5 +93,22 @@ public class TokenAcquirer {
             a = b.charAt(c) == '+' ? a + d : a ^ d;
         }
         return a;
+    }
+
+    private static class Reducer {
+
+        private int state;
+
+        Reducer(int identity) {
+            state = identity;
+        }
+
+        void accept(int v) {
+            state = uo(state + v, "+-a^+6");
+        }
+
+        int get() {
+            return uo(state, "+-3^+b+-f");
+        }
     }
 }
