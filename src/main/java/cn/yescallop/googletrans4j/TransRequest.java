@@ -5,7 +5,7 @@ import cn.yescallop.googletrans4j.internal.TransRequestBuilderImpl;
 import java.util.Set;
 
 /**
- * A Google Translate request.
+ * A <i>Google Translate</i> request.
  *
  * @author Scallop Ye
  */
@@ -23,6 +23,7 @@ public interface TransRequest {
     /**
      * Creates a new {@code TransRequest} builder with the given text.
      *
+     * @param text the text.
      * @return a new builder.
      */
     static Builder newBuilder(String text) {
@@ -33,7 +34,7 @@ public interface TransRequest {
      * Creates a new {@code TransRequest} for detecting the language of the given text.
      *
      * @param text the text.
-     * @return a new {@code TransRequest}.
+     * @return a new request.
      */
     static TransRequest detecting(String text) {
         return newBuilder(text)

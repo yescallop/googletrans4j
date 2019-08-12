@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A Google Translate client.
+ * A <i>Google Translate</i> client.
  *
  * @author Scallop Ye
  */
@@ -64,7 +64,7 @@ public interface TransClient {
         Builder requestTimeout(Duration duration);
 
         /**
-         * Sets the host of Google Translate for the client.
+         * Sets the host of <i>Google Translate</i> for the client.
          * <p>
          * If not invoked, "translate.google.com" will be used.
          *
@@ -82,21 +82,23 @@ public interface TransClient {
     }
 
     /**
-     * Returns the {@code HttpClient} used by this client.
+     * Returns an {@code Optional} containing the {@code HttpClient} used by
+     * this client. If no {@code HttpClient} was set in the client's builder,
+     * then the {@code Optional} is empty.
      *
      * @return the {@code HttpClient}.
      */
-    HttpClient httpClient();
+    Optional<HttpClient> httpClient();
 
     /**
-     * Returns an {@code Optional} containing the request timeout duration.
+     * Returns an {@code Optional} containing the request timeout.
      *
      * @return an {@code Optional<Duration>}.
      */
     Optional<Duration> requestTimeout();
 
     /**
-     * Returns the host of Google Translate for the client.
+     * Returns the host of <i>Google Translate</i> for this client.
      *
      * @return the host.
      */

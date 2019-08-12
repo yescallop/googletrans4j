@@ -13,10 +13,10 @@ import java.util.Set;
  */
 public final class TransRequestImpl implements TransRequest {
 
-    private String sourceLang;
-    private String targetLang;
-    private String text;
-    private Set<TransParameter> params;
+    private final String sourceLang;
+    private final String targetLang;
+    private final String text;
+    private final Set<TransParameter> params;
 
     TransRequestImpl(TransRequestBuilderImpl builder) {
         sourceLang = builder.sourceLang;

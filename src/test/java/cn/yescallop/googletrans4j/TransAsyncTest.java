@@ -4,6 +4,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 /**
+ * A test for asynchronous translating.
+ *
  * @author Scallop Ye
  */
 public class TransAsyncTest {

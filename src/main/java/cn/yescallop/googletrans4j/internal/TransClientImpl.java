@@ -11,7 +11,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 public final class TransClientImpl implements TransClient {
 
     private final HttpClient httpClient;
+    private final boolean isDefaultHttpClient;
     private final Duration requestTimeout;
     private final String host;
     private final TokenAcquirer tokenAcquirer;
@@ -30,17 +30,19 @@ public final class TransClientImpl implements TransClient {
     TransClientImpl(TransClientBuilderImpl builder) {
         if (builder.httpClient == null) {
             httpClient = HttpClient.newHttpClient();
+            isDefaultHttpClient = true;
         } else {
             httpClient = builder.httpClient;
+            isDefaultHttpClient = false;
         }
         requestTimeout = builder.requestTimeout;
-        host = Objects.requireNonNull(builder.host);
+        host = builder.host;
         tokenAcquirer = new TokenAcquirer(httpClient, host, requestTimeout);
     }
 
     @Override
-    public HttpClient httpClient() {
-        return httpClient;
+    public Optional<HttpClient> httpClient() {
+        return isDefaultHttpClient ? Optional.empty() : Optional.of(httpClient);
     }
 
     @Override

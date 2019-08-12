@@ -3,6 +3,8 @@ package cn.yescallop.googletrans4j;
 import java.net.http.HttpClient;
 
 /**
+ * A test for token acquiring.
+ *
  * @author Scallop Ye
  */
 public class TokenTest {

@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A TokenAcquirer is used for acquiring tokens for Google Translate requests.
+ * A {@code TokenAcquirer} is used for acquiring tokens for <i>Google Translate</i> requests.
  *
  * @author Scallop Ye
  */
@@ -33,16 +33,16 @@ public final class TokenAcquirer {
     private CompletableFuture<Void> tkkUpdateFuture;
 
     /**
-     * Constructs a TokenAcquirer with the given arguments.
+     * Constructs a {@code TokenAcquirer} with the given arguments.
      *
      * @param httpClient the {@code HttpClient} used for HTTP requests.
-     * @param host the host of Google Translate.
+     * @param host the host of <i>Google Translate</i>.
      * @param requestTimeout the timeout of an HTTP request.
      */
     public TokenAcquirer(HttpClient httpClient, String host, Duration requestTimeout) {
         this.httpClient = Objects.requireNonNull(httpClient);
         HttpRequest.Builder b = HttpRequest.newBuilder()
-                .uri(URI.create("https://" + host))
+                .uri(URI.create("https://" + Objects.requireNonNull(host)))
                 .header("User-Agent", TransClient.USER_AGENT);
         if (requestTimeout != null)
             b.timeout(requestTimeout);
@@ -65,7 +65,7 @@ public final class TokenAcquirer {
      * Updates the tkk asynchronously.
      */
     private synchronized CompletableFuture<Void> updateTkkAsync() {
-        if (tkkUpdateFuture == null || (tkkExpired() && tkkUpdateFuture.isDone())) {
+        if (tkkUpdateFuture == null || (tkkUpdateFuture.isDone() && tkkExpired())) {
             tkkUpdateFuture = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(this::updateTkk);
         }

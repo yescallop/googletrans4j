@@ -1,6 +1,8 @@
 package cn.yescallop.googletrans4j;
 
 /**
+ * A test for translating.
+ *
  * @author Scallop Ye
  */
 public class TransTest {
@@ -9,7 +11,7 @@ public class TransTest {
         TransClient client = TransClient.newBuilder()
                 .host("translate.google.cn")
                 .build();
-        ;
+
         TransRequest req = TransRequest.newBuilder()
                 .text("testing")
                 .targetLang("ja")

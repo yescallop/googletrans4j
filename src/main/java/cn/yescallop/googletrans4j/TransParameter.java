@@ -1,8 +1,8 @@
 package cn.yescallop.googletrans4j;
 
 /**
- * Declares the possible values for the query parameter "dt"
- * in an HTTP request for Google Translate.
+ * Declares the possible values for the query parameter key "dt"
+ * in an HTTP request for <i>Google Translate</i>.
  *
  * @author Scallop Ye
  */
@@ -24,8 +24,12 @@ public enum TransParameter {
         this.value = value;
     }
 
-    @Override
-    public String toString() {
+    /**
+     * Returns the parameter value of this enum constant.
+     *
+     * @return the parameter value.
+     */
+    public String value() {
         return value;
     }
 }

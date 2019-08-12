@@ -25,9 +25,9 @@ public final class TransClientBuilderImpl implements TransClient.Builder {
 
     @Override
     public TransClientBuilderImpl requestTimeout(Duration duration) {
-        Objects.requireNonNull(duration);
         if (duration.isNegative() || Duration.ZERO.equals(duration))
             throw new IllegalArgumentException("Invalid duration: " + duration);
+        requestTimeout = duration;
         return this;
     }
 

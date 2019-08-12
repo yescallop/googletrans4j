@@ -40,12 +40,12 @@ public final class HttpRequests {
                 .parameter("sl", req.sourceLang())
                 .parameter("tl", req.targetLang());
         Set<TransParameter> params = req.parameters();
-        ;
+
         b.parameter("dt", params.stream()
-                .map(TransParameter::toString)
+                .map(TransParameter::value)
                 .toArray(String[]::new));
         if (params.contains(TransParameter.TRANSLITERATION)) {
-            b.parameter("dt", TransParameter.TRANSLATION.toString());
+            b.parameter("dt", TransParameter.TRANSLATION.value());
         }
         return b.parameter("tk", token).toURI();
     }
