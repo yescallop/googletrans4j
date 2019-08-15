@@ -17,10 +17,10 @@ public class TransAsyncTest {
 
         CompletableFuture[] cfs = Stream.of("Así es la vida", "それは人生です", "这是生活", "It's life")
                 .map(t -> TransRequest.newBuilder(t)
+                        .parameters(TransParameter.TRANSLITERATION)
                         .targetLang("fr")
                         .build())
                 .map(r -> client.sendAsync(r)
-                        .thenApply(TransResponse::rawResponse)
                         .thenAccept(System.out::println))
                 .toArray(CompletableFuture[]::new);
 

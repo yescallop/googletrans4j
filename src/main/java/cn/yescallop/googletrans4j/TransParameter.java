@@ -10,13 +10,14 @@ public enum TransParameter {
     ALTERNATE_TRANSLATIONS("at"),
     ALL_TRANSLATIONS("bd"),
     EXAMPLES("ex"),
-    LANG_DETECTION("ld"),
+    UNKNOWN_LD("ld"),
     DEFINITIONS("md"),
     SPELLING_CORRECTION("qca"),
     SEE_ALSO("rw"),
     TRANSLITERATION("rm"),
     SYNONYMS("ss"),
-    TRANSLATION("t");
+    TRANSLATION("t"),
+    UNKNOWN_GT("gt");
 
     private final String value;
 

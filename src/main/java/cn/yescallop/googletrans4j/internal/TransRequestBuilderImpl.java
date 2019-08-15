@@ -38,8 +38,6 @@ public final class TransRequestBuilderImpl implements TransRequest.Builder {
 
     @Override
     public TransRequestBuilderImpl parameters(TransParameter... params) {
-        if (params.length == 0)
-            throw new IllegalArgumentException("empty params");
         this.params = Set.of(params);
         return this;
     }

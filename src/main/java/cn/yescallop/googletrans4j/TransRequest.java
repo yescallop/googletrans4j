@@ -38,7 +38,7 @@ public interface TransRequest {
      */
     static TransRequest detecting(String text) {
         return newBuilder(text)
-                .parameters(TransParameter.LANG_DETECTION)
+                .parameters()
                 .build();
     }
 

@@ -41,9 +41,13 @@ public final class HttpRequests {
                 .parameter("tl", req.targetLang());
         Set<TransParameter> params = req.parameters();
 
-        b.parameter("dt", params.stream()
+        String[] dtv = params.stream()
                 .map(TransParameter::value)
-                .toArray(String[]::new));
+                .toArray(String[]::new);
+
+        if (dtv.length != 0) {
+            b.parameter("dt", dtv);
+        }
         if (params.contains(TransParameter.TRANSLITERATION)) {
             b.parameter("dt", TransParameter.TRANSLATION.value());
         }
