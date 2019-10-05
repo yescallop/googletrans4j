@@ -13,10 +13,11 @@ public class TransTest {
                 .build();
 
         TransRequest req = TransRequest.newBuilder()
-                .text("testing")
-                .targetLang("ja")
+                .text("曼珠沙華")
+                .sourceLang("ja")
+                .parameters(TransParameter.TRANSLITERATION)
                 .build();
         TransResponse resp = client.send(req);
-        System.out.println(resp.rawResponse());
+        System.out.println(resp);
     }
 }

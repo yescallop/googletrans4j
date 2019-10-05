@@ -41,15 +41,13 @@ public final class HttpRequests {
                 .parameter("tl", req.targetLang());
         Set<TransParameter> params = req.parameters();
 
-        String[] dtv = params.stream()
-                .map(TransParameter::value)
-                .toArray(String[]::new);
-
-        if (dtv.length != 0) {
-            b.parameter("dt", dtv);
-        }
-        if (params.contains(TransParameter.TRANSLITERATION)) {
-            b.parameter("dt", TransParameter.TRANSLATION.value());
+        if (!params.isEmpty()) {
+            b.parameter("dt", params.stream()
+                    .map(TransParameter::value)
+                    .toArray(String[]::new));
+            if (params.contains(TransParameter.TRANSLITERATION)) {
+                b.parameter("dt", TransParameter.TRANSLATION.value());
+            }
         }
         return b.parameter("tk", token).toURI();
     }
