@@ -17,7 +17,7 @@ public class JapaneseConverterTest {
                 .build();
         JapaneseConverter jc = JapaneseConverter.create(client);
         try {
-            jc.convert(Files.lines(Path.of("convert.txt")))
+            jc.convert(Files.lines(Path.of("convert_test.txt")))
                     .forEach(l -> {
                         System.out.println(l.raw());
                         System.out.println(l.kanaNoted());

@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 public final class JapaneseConverter {
 
     private static final Pattern PATTERN_SYLLABLE =
-            Pattern.compile("(?:n(?![aiueoāīūēō])|[wrtypsdfghjkzcvbnm~]*[aiueoāīūēō]|[ -])");
+            Pattern.compile("n(?![aiueoāīūēō])|[wrtypsdfghjkzcvbnm~]*[aiueoāīūēō]|\\b[ -]\\b");
 
     private static final int HIRAGANA_START = 0x3041;
     private static final int HIRAGANA_END = 0x3094;
@@ -88,7 +88,9 @@ public final class JapaneseConverter {
         res.raw = line;
         res.transliteration = resp.sourceTransliteration()
                 .map(String::toLowerCase)
-                .get();
+                .orElse(null);
+        if (res.transliteration == null)
+            return res;
         res.kana = romajiToKana(res.transliteration);
         List<Integer> indexes = new ArrayList<>();
         res.regex = kanaToRegex(line, indexes);
@@ -110,9 +112,7 @@ public final class JapaneseConverter {
             String res = m.group(i + 1);
             res = res.trim();
             sb.append(line, last, cur);
-            if (!res.isBlank()) {
-                sb.append('(').append(res).append(')');
-            }
+            sb.append('(').append(res).append(')');
             last = cur;
         }
         sb.append(line, last, line.length());
@@ -122,7 +122,14 @@ public final class JapaneseConverter {
     private static String romajiToKana(String romaji) {
         StringBuilder sb = new StringBuilder();
         Matcher m = PATTERN_SYLLABLE.matcher(romaji);
+        int lastEnd = 0;
         while (m.find()) {
+            int diff = m.start() - lastEnd;
+            if (diff != 0 &&
+                    !(lastEnd != 0 && diff == 1 && romaji.charAt(lastEnd) == '\'')) {
+                sb.append('/');
+            }
+            lastEnd = m.end();
             String syllable = m.group();
             char c0 = syllable.charAt(0);
             if (c0 == ' ' || c0 == '-') {
@@ -149,21 +156,29 @@ public final class JapaneseConverter {
                 romajiSyllableToKana(syllable, sb);
             }
         }
+        if (lastEnd != romaji.length())
+            sb.append('/');
         return sb.toString();
     }
 
-    private static final Pattern YOUON_1 = Pattern.compile("[kgnhbpmr]y[auo]");
-    private static final Pattern YOUON_2 = Pattern.compile("(?:sh|j|ch|dj)[auo]");
+    private static final Pattern YOUON_1 = Pattern.compile("[kgnhbpmr]y[aueo]");
+    private static final Pattern YOUON_2 = Pattern.compile("(?:sh|j|ch|dj)[aueo]");
+    private static final Pattern YOUON_3 = Pattern.compile("f[aieo]");
 
     private static void romajiSyllableToKana(String s, StringBuilder sb) {
         Character kana = ROMAJI_TO_KANA.get(s);
         if (kana == null) {
             if (YOUON_1.matcher(s).matches()) {
                 sb.append(ROMAJI_TO_KANA.get(s.charAt(0) + "i"));
-                sb.append(ROMAJI_TO_KANA.get("~y" + s.charAt(2)));
+                char c = s.charAt(2);
+                sb.append(c == 'e' ? 'ぇ' : ROMAJI_TO_KANA.get("~y" + c));
             } else if (YOUON_2.matcher(s).matches()) {
                 sb.append(ROMAJI_TO_KANA.get(s.substring(0, s.length() - 1) + 'i'));
-                sb.append(ROMAJI_TO_KANA.get("~y" + s.charAt(s.length() - 1)));
+                char c = s.charAt(s.length() - 1);
+                sb.append(c == 'e' ? 'ぇ' : ROMAJI_TO_KANA.get("~y" + c));
+            } else if (YOUON_3.matcher(s).matches()) {
+                sb.append('ふ');
+                sb.append(ROMAJI_TO_KANA.get("~" + s.charAt(1)));
             } else {
                 throw new IllegalArgumentException("No such kana: " + s);
             }
@@ -172,56 +187,72 @@ public final class JapaneseConverter {
         }
     }
 
+    private static final String PSYCHO_IDEOGRAPHIC = "々〇・";
+
     private static String kanaToRegex(String s, List<Integer> indexes) {
         StringBuilder sb = new StringBuilder();
         int len = s.length();
         int last = 0;
-        boolean match = false;
+        int flag = -1;
         for (int i = 0; i < len; i++) {
             int c = s.codePointAt(i);
             boolean kata = isKatakana(c);
             boolean hira = isHiragana(c);
             if (!kata && !hira && c != 'ー') {
-                if (!Character.isIdeographic(c)) {
-                    if (match) indexes.add(i);
-                    match = false;
-                } else if (!match) {
-                    sb.append("( .*?|.*? |.*?)");
-                    match = true;
+                if (PSYCHO_IDEOGRAPHIC.indexOf(c) < 0 && !Character.isIdeographic(c)) {
+                    if (flag == 0) indexes.add(i);
+                    if (Character.isSpaceChar(c)) {
+                        if (flag < 1) sb.append("[ -]");
+                        flag = flag == 1 ? 3 : 2;
+                    } else if (flag != 1) {
+                        if (flag != 3) sb.append('/');
+                        flag = 1;
+                    }
+                } else if (flag != 0) {
+                    sb.append("( .+?|.+? |.+?)");
+                    flag = 0;
                 }
             } else {
-                if (match) indexes.add(i);
+                if (flag == 0) indexes.add(i);
                 if (kata) {
                     last = c;
-                    sb.appendCodePoint(c - HIRA_KATA_OFFSET);
+                    if (c == 'オ') {
+                        sb.append("[おう]");
+                    } else {
+                        sb.appendCodePoint(c - HIRA_KATA_OFFSET);
+                    }
                     sb.append(" ?");
-                    match = false;
+                    flag = -1;
                     continue;
                 } else if (c == 'ー' && last != 0) {
                     String r = ROMAJI[last - KATAKANA_START];
                     int idx = "aiueo".indexOf(r.charAt(r.length() - 1));
                     sb.append("あいうえう".charAt(idx));
-                    match = false;
+                    flag = -1;
                 } else {
                     switch (c) {
+                        case 'お':
+                            sb.append("[おう]");
+                            break;
                         case 'は':
-                            c = 'わ';
+                            sb.append("[はわ]");
                             break;
                         case 'へ':
-                            c = 'え';
+                            sb.append("[へえ]");
                             break;
                         case 'を':
-                            c = 'お';
+                            sb.append("[をお]");
                             break;
+                        default:
+                            sb.appendCodePoint(c);
                     }
-                    sb.appendCodePoint(c);
-                    match = false;
+                    flag = -1;
                 }
                 sb.append(" ?");
             }
             last = 0;
         }
-        if (match) indexes.add(len);
+        if (flag == 0) indexes.add(len);
         return sb.toString();
     }
 
@@ -262,16 +293,6 @@ public final class JapaneseConverter {
 
         public String kanaNoted() {
             return kanaNoted;
-        }
-
-        @Override
-        public String toString() {
-            return "Line{" +
-                    "raw='" + raw + '\'' +
-                    ", transliteration='" + transliteration + '\'' +
-                    ", kana='" + kana + '\'' +
-                    ", regex='" + regex + '\'' +
-                    '}';
         }
     }
 }
