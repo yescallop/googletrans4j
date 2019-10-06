@@ -18,12 +18,12 @@ import java.util.stream.Stream;
 public final class JapaneseConverter {
 
     private static final Pattern PATTERN_SYLLABLE =
-            Pattern.compile("(?:n(?![aiueoāīūēō])|[wrtypsdfghjkzcvbnm~]*[aiueoāīūēō])");
+            Pattern.compile("(?:n(?![aiueoāīūēō])|[wrtypsdfghjkzcvbnm~]*[aiueoāīūēō]|[ -])");
 
     private static final int HIRAGANA_START = 0x3041;
-    private static final int HIRAGANA_STOP = 0x3094;
+    private static final int HIRAGANA_END = 0x3094;
     private static final int KATAKANA_START = 0x30A1;
-    private static final int KATAKANA_STOP = 0x30F4;
+    private static final int KATAKANA_END = 0x30F4;
     private static final int HIRA_KATA_OFFSET = KATAKANA_START - HIRAGANA_START;
     private static final String[] ROMAJI = {
             "~a", "a", "~i", "i", "~u", "u", "~e", "e", "~o", "o",
@@ -124,8 +124,12 @@ public final class JapaneseConverter {
         Matcher m = PATTERN_SYLLABLE.matcher(romaji);
         while (m.find()) {
             String syllable = m.group();
+            char c0 = syllable.charAt(0);
+            if (c0 == ' ' || c0 == '-') {
+                sb.append(' ');
+                continue;
+            }
             if (syllable.length() != 1) {
-                char c0 = syllable.charAt(0);
                 char c1 = syllable.charAt(1);
                 if (c0 == c1 || (c0 == 't' && c1 == 'c')) {
                     syllable = syllable.substring(1);
@@ -178,8 +182,11 @@ public final class JapaneseConverter {
             boolean kata = isKatakana(c);
             boolean hira = isHiragana(c);
             if (!kata && !hira && c != 'ー') {
-                if (!match) {
-                    sb.append("(.*)");
+                if (!Character.isIdeographic(c)) {
+                    if (match) indexes.add(i);
+                    match = false;
+                } else if (!match) {
+                    sb.append("( .*?|.*? |.*?)");
                     match = true;
                 }
             } else {
@@ -187,6 +194,7 @@ public final class JapaneseConverter {
                 if (kata) {
                     last = c;
                     sb.appendCodePoint(c - HIRA_KATA_OFFSET);
+                    sb.append(" ?");
                     match = false;
                     continue;
                 } else if (c == 'ー' && last != 0) {
@@ -206,9 +214,10 @@ public final class JapaneseConverter {
                             c = 'お';
                             break;
                     }
-                    match = false;
                     sb.appendCodePoint(c);
+                    match = false;
                 }
+                sb.append(" ?");
             }
             last = 0;
         }
@@ -217,11 +226,11 @@ public final class JapaneseConverter {
     }
 
     private static boolean isHiragana(int c) {
-        return c >= HIRAGANA_START && c <= HIRAGANA_STOP;
+        return c >= HIRAGANA_START && c <= HIRAGANA_END;
     }
 
     private static boolean isKatakana(int c) {
-        return c >= KATAKANA_START && c <= KATAKANA_STOP;
+        return c >= KATAKANA_START && c <= KATAKANA_END;
     }
 
     public static class Line {
