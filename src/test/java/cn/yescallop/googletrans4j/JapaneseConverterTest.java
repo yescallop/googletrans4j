@@ -25,6 +25,11 @@ public class JapaneseConverterTest {
                         System.out.println(l.kana());
                         System.out.println(l.regex());
                         System.out.println();
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            //delay or get banned
+                        }
                     });
         } catch (IOException e) {
             e.printStackTrace();

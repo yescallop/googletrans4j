@@ -4,6 +4,7 @@ import cn.yescallop.googletrans4j.TransResponse;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonSyntaxException;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,7 +30,13 @@ public final class TransResponseImpl implements TransResponse {
 
     public TransResponseImpl(String json) {
         raw = json;
-        arr = GSON.fromJson(raw, JsonArray.class);
+        try {
+            arr = GSON.fromJson(raw, JsonArray.class);
+        } catch (JsonSyntaxException e) {
+            e.printStackTrace();
+            System.out.println(raw);
+            throw e;
+        }
         parse();
     }
 

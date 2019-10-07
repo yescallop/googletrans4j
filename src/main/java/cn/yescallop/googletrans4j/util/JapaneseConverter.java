@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 public final class JapaneseConverter {
 
     private static final Pattern PATTERN_SYLLABLE =
-            Pattern.compile("n(?![aiueoāīūēō])|[wrtypsdfghjkzcvbnm~]*[aiueoāīūēō]|\\b[ -]\\b");
+            Pattern.compile("n(?![aiueoāīūēō])|[wrtypsdfghjkzcvbnm~]*[aiueoāīūēō]|\\b \\b| ?\u0304");
 
     private static final int HIRAGANA_START = 0x3041;
     private static final int HIRAGANA_END = 0x3094;
@@ -68,11 +68,23 @@ public final class JapaneseConverter {
     }
 
     public Stream<Line> convert(Stream<String> stream) {
-        return stream.filter(s -> !s.isEmpty())
+        return stream.filter(s -> !s.isBlank())
                 .map(this::convertLine);
     }
 
     private Line convertLine(String line) {
+        Line res = new Line();
+        res.raw = line;
+        int len = line.length();
+        StringBuilder sb = new StringBuilder(len);
+        for (int i = 0; i < len; i++) {
+            int c = line.codePointAt(i);
+            if (c == '　' || c == ' ') {
+                c = '/';
+            }
+            sb.appendCodePoint(c);
+        }
+        line = sb.toString();
         TransRequest req = TransRequest.newBuilder(line)
                 .parameters(TransParameter.TRANSLITERATION)
                 .sourceLang("ja")
@@ -82,10 +94,9 @@ public final class JapaneseConverter {
         try {
             resp = client.send(req);
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
-        Line res = new Line();
-        res.raw = line;
         res.transliteration = resp.sourceTransliteration()
                 .map(String::toLowerCase)
                 .orElse(null);
@@ -94,7 +105,7 @@ public final class JapaneseConverter {
         res.kana = romajiToKana(res.transliteration);
         List<Integer> indexes = new ArrayList<>();
         res.regex = kanaToRegex(line, indexes);
-        res.kanaNoted = noteKana(line, res.kana, res.regex, indexes);
+        res.kanaNoted = noteKana(res.raw, res.kana, res.regex, indexes);
         return res;
     }
 
@@ -112,7 +123,11 @@ public final class JapaneseConverter {
             String res = m.group(i + 1);
             res = res.trim();
             sb.append(line, last, cur);
-            sb.append('(').append(res).append(')');
+            if (!res.isEmpty()) {
+                if (res.indexOf('/') >= 0)
+                    res = "ERROR";
+                sb.append('(').append(res).append(')');
+            }
             last = cur;
         }
         sb.append(line, last, line.length());
@@ -125,31 +140,35 @@ public final class JapaneseConverter {
         int lastEnd = 0;
         while (m.find()) {
             int diff = m.start() - lastEnd;
-            if (diff != 0 &&
-                    !(lastEnd != 0 && diff == 1 && romaji.charAt(lastEnd) == '\'')) {
+            char c = romaji.charAt(lastEnd);
+            if (diff == 1 && c == ' ') {
+                sb.append(' ');
+            } else if (diff != 0 &&
+                    !(lastEnd != 0 && diff == 1 && (c == '\'' || c == '-'))) {
                 sb.append('/');
             }
             lastEnd = m.end();
             String syllable = m.group();
-            char c0 = syllable.charAt(0);
-            if (c0 == ' ' || c0 == '-') {
+            int len = syllable.length();
+            if (syllable.equals(" ")) {
                 sb.append(' ');
                 continue;
+            } else if (syllable.charAt(len - 1) == '\u0304') {
+                sb.append('ー');
+                continue;
             }
-            if (syllable.length() != 1) {
+            if (len != 1) {
+                char c0 = syllable.charAt(0);
                 char c1 = syllable.charAt(1);
                 if (c0 == c1 || (c0 == 't' && c1 == 'c')) {
                     syllable = syllable.substring(1);
                     sb.append('っ');
                 }
             }
-            if (syllable.length() > 3) {
-                throw new IllegalArgumentException("syllable length > 3: " + syllable);
-            }
-            int last = syllable.charAt(syllable.length() - 1);
+            int last = syllable.charAt(len - 1);
             int i = "āīūēō".indexOf(last);
             if (i >= 0) {
-                syllable = syllable.substring(0, syllable.length() - 1) + "aiueo".charAt(i);
+                syllable = syllable.substring(0, len - 1) + "aiueo".charAt(i);
                 romajiSyllableToKana(syllable, sb);
                 sb.append("あいうえう".charAt(i));
             } else {
@@ -201,11 +220,8 @@ public final class JapaneseConverter {
             if (!kata && !hira && c != 'ー') {
                 if (PSYCHO_IDEOGRAPHIC.indexOf(c) < 0 && !Character.isIdeographic(c)) {
                     if (flag == 0) indexes.add(i);
-                    if (Character.isSpaceChar(c)) {
-                        if (flag < 1) sb.append("[ -]");
-                        flag = flag == 1 ? 3 : 2;
-                    } else if (flag != 1) {
-                        if (flag != 3) sb.append('/');
+                    if (flag != 1) {
+                        sb.append("/ ?");
                         flag = 1;
                     }
                 } else if (flag != 0) {
@@ -216,19 +232,33 @@ public final class JapaneseConverter {
                 if (flag == 0) indexes.add(i);
                 if (kata) {
                     last = c;
-                    if (c == 'オ') {
-                        sb.append("[おう]");
-                    } else {
-                        sb.appendCodePoint(c - HIRA_KATA_OFFSET);
+                    switch (c) {
+                        case 'オ':
+                            sb.append("[おう]");
+                            break;
+                        case 'ァ':
+                        case 'ィ':
+                        case 'ゥ':
+                        case 'ェ':
+                        case 'ォ':
+                            c -= HIRA_KATA_OFFSET;
+                            sb.append('[')
+                                    .appendCodePoint(c)
+                                    .appendCodePoint(c + 1)
+                                    .append(']');
+                            break;
+                        default:
+                            sb.appendCodePoint(c - HIRA_KATA_OFFSET);
                     }
-                    sb.append(" ?");
-                    flag = -1;
-                    continue;
-                } else if (c == 'ー' && last != 0) {
-                    String r = ROMAJI[last - KATAKANA_START];
-                    int idx = "aiueo".indexOf(r.charAt(r.length() - 1));
-                    sb.append("あいうえう".charAt(idx));
-                    flag = -1;
+                } else if (c == 'ー') {
+                    if (last != 0) {
+                        String r = ROMAJI[last - KATAKANA_START];
+                        int idx = "aiueo".indexOf(r.charAt(r.length() - 1));
+                        sb.append("あいうえう".charAt(idx));
+                        last = 0;
+                    } else {
+                        sb.append('ー');
+                    }
                 } else {
                     switch (c) {
                         case 'お':
@@ -243,14 +273,24 @@ public final class JapaneseConverter {
                         case 'を':
                             sb.append("[をお]");
                             break;
+                        case 'ぁ':
+                        case 'ぃ':
+                        case 'ぅ':
+                        case 'ぇ':
+                        case 'ぉ':
+                            sb.append('[')
+                                    .appendCodePoint(c)
+                                    .appendCodePoint(c + 1)
+                                    .append(']');
+                            break;
                         default:
                             sb.appendCodePoint(c);
                     }
-                    flag = -1;
+                    last = 0;
                 }
+                flag = -1;
                 sb.append(" ?");
             }
-            last = 0;
         }
         if (flag == 0) indexes.add(len);
         return sb.toString();
