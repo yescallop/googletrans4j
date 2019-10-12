@@ -162,6 +162,7 @@ public final class JapaneseConverter {
                 char c1 = syllable.charAt(1);
                 if (c0 == c1 || (c0 == 't' && c1 == 'c')) {
                     syllable = syllable.substring(1);
+                    len--;
                     sb.append('っ');
                 }
             }
