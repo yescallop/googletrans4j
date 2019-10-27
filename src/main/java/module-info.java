@@ -8,4 +8,5 @@ module cn.yescallop.googletrans4j {
     requires gson;
 
     exports cn.yescallop.googletrans4j;
+    exports cn.yescallop.googletrans4j.util;
 }

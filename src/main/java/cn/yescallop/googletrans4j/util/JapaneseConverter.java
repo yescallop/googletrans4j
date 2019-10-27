@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 public final class JapaneseConverter {
 
     private static final Pattern PATTERN_SYLLABLE =
-            Pattern.compile("n(?![aiueoāīūēō])|[wrtypsdfghjkzcvbnm~]*[aiueoāīūēō]|\\b \\b| ?\u0304");
+            Pattern.compile("n(?![aiueoāīūēō])|[wrtypsdfghjkzcvbnm~]*[aiueoāīūēō]|\\b \\b| ?\\u0304");
 
     private static final int HIRAGANA_START = 0x3041;
     private static final int HIRAGANA_END = 0x3094;
@@ -39,6 +39,7 @@ public final class JapaneseConverter {
             "n", "vu"
     };
     private static final int VA_LINE_START = 0x30F7;
+    private static final int VA_LINE_END = 0x30FA;
     private static final String[] VA_LINE = {"va", "vi", "ve", "vo"};
     private static final Map<String, Character> ROMAJI_TO_KANA = new HashMap<>(ROMAJI.length + VA_LINE.length);
 
@@ -216,7 +217,8 @@ public final class JapaneseConverter {
         int flag = -1;
         for (int i = 0; i < len; i++) {
             int c = s.codePointAt(i);
-            boolean kata = isKatakana(c);
+            boolean vaLine = inVaLine(c);
+            boolean kata = isKatakana(c) || vaLine;
             boolean hira = isHiragana(c);
             if (!kata && !hira && c != 'ー') {
                 if (PSYCHO_IDEOGRAPHIC.indexOf(c) < 0 && !Character.isIdeographic(c)) {
@@ -232,7 +234,6 @@ public final class JapaneseConverter {
             } else {
                 if (flag == 0) indexes.add(i);
                 if (kata) {
-                    last = c;
                     switch (c) {
                         case 'オ':
                             sb.append("[おう]");
@@ -242,21 +243,22 @@ public final class JapaneseConverter {
                         case 'ゥ':
                         case 'ェ':
                         case 'ォ':
-                            c -= HIRA_KATA_OFFSET;
+                            int ck = c - HIRA_KATA_OFFSET;
                             sb.append('[')
-                                    .appendCodePoint(c)
-                                    .appendCodePoint(c + 1)
+                                    .appendCodePoint(ck)
+                                    .appendCodePoint(ck + 1)
                                     .append(']');
                             break;
                         default:
-                            sb.appendCodePoint(c - HIRA_KATA_OFFSET);
+                            sb.appendCodePoint(vaLine ? c : c - HIRA_KATA_OFFSET);
                     }
                 } else if (c == 'ー') {
-                    if (last != 0) {
+                    if (isKatakana(last)) {
                         String r = ROMAJI[last - KATAKANA_START];
                         int idx = "aiueo".indexOf(r.charAt(r.length() - 1));
                         sb.append("あいうえう".charAt(idx));
-                        last = 0;
+                    } else if (inVaLine(last)) {
+                        sb.append("あいえう".charAt(last - VA_LINE_START));
                     } else {
                         sb.append('ー');
                     }
@@ -287,8 +289,8 @@ public final class JapaneseConverter {
                         default:
                             sb.appendCodePoint(c);
                     }
-                    last = 0;
                 }
+                last = c;
                 flag = -1;
                 sb.append(" ?");
             }
@@ -303,6 +305,10 @@ public final class JapaneseConverter {
 
     private static boolean isKatakana(int c) {
         return c >= KATAKANA_START && c <= KATAKANA_END;
+    }
+
+    private static boolean inVaLine(int c) {
+        return c >= VA_LINE_START && c <= VA_LINE_END;
     }
 
     public static class Line {
