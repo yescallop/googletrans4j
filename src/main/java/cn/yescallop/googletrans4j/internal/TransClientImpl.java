@@ -37,7 +37,11 @@ public final class TransClientImpl implements TransClient {
         }
         requestTimeout = builder.requestTimeout;
         host = builder.host;
-        tokenAcquirer = new TokenAcquirer(httpClient, host, requestTimeout);
+        try {
+            tokenAcquirer = TokenAcquirer.create(httpClient, host, requestTimeout);
+        } catch (Exception e) {
+            throw new RuntimeException("Exception creating TokenAcquirer instance", e);
+        }
     }
 
     @Override
@@ -65,10 +69,10 @@ public final class TransClientImpl implements TransClient {
 
     @Override
     public CompletableFuture<TransResponse> sendAsync(TransRequest request) {
-        return tokenAcquirer.acquireAsync(request.text())
-                .thenCompose(token -> httpClient.sendAsync(
-                        HttpRequests.translating(this, request, token),
-                        HttpResponse.BodyHandlers.ofString()))
+        String token = tokenAcquirer.acquire(request.text());
+        return httpClient.sendAsync(
+                HttpRequests.translating(this, request, token),
+                HttpResponse.BodyHandlers.ofString())
                 .thenApply(resp -> TransResponse.parse(resp.body()));
     }
 }

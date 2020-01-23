@@ -69,8 +69,7 @@ public final class JapaneseConverter {
     }
 
     public Stream<Line> convert(Stream<String> stream) {
-        return stream.filter(s -> !s.isBlank())
-                .map(this::convertLine);
+        return stream.map(s -> s.isBlank() ? null : convertLine(s));
     }
 
     private Line convertLine(String line) {
@@ -103,7 +102,12 @@ public final class JapaneseConverter {
                 .orElse(null);
         if (res.transliteration == null)
             return res;
-        res.kana = romajiToKana(res.transliteration);
+        try {
+            res.kana = romajiToKana(res.transliteration);
+        } catch (Exception e) {
+            res.exception = e;
+            return res;
+        }
         List<Integer> indexes = new ArrayList<>();
         res.regex = kanaToRegex(line, indexes);
         res.kanaNoted = noteKana(res.raw, res.kana, res.regex, indexes);
@@ -319,6 +323,8 @@ public final class JapaneseConverter {
         private String regex;
         private String kanaNoted;
 
+        private Exception exception;
+
         private Line() {
         }
 
@@ -340,6 +346,10 @@ public final class JapaneseConverter {
 
         public String kanaNoted() {
             return kanaNoted;
+        }
+
+        public Optional<Exception> exception() {
+            return Optional.ofNullable(exception);
         }
     }
 }

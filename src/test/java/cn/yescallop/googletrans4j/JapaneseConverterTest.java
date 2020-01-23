@@ -19,8 +19,18 @@ public class JapaneseConverterTest {
         try {
             jc.convert(Files.lines(Path.of("convert_test.txt")))
                     .forEach(l -> {
+                        if (l == null) {
+                            System.out.println();
+                            return;
+                        }
+
                         System.out.println(l.raw());
-                        System.out.println(l.kanaNoted());
+                        if (l.kanaNoted() != null) {
+                            System.out.println(l.kanaNoted());
+                        } else {
+                            System.out.println("ERROR: " + l.raw());
+                            l.exception().ifPresent(Throwable::printStackTrace);
+                        }
                         System.out.println(l.transliteration());
                         System.out.println(l.kana());
                         System.out.println(l.regex());

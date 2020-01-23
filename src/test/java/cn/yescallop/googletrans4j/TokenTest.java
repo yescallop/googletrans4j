@@ -10,7 +10,7 @@ import java.net.http.HttpClient;
 public class TokenTest {
 
     public static void main(String[] args) throws Exception {
-        TokenAcquirer ta = new TokenAcquirer(
+        TokenAcquirer ta = TokenAcquirer.create(
                 HttpClient.newHttpClient(),
                 "translate.google.cn",
                 null

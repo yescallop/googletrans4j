@@ -1,7 +1,5 @@
 package cn.yescallop.googletrans4j;
 
-import cn.yescallop.googletrans4j.internal.util.Utils;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -9,13 +7,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A {@code TokenAcquirer} is used for acquiring tokens for <i>Google Translate</i> requests.
+ * A {@code TokenAcquirer} supplies tokens for <i>Google Translate</i> requests.
  *
  * @author Scallop Ye
  */
@@ -26,61 +22,42 @@ public final class TokenAcquirer {
      */
     private static final Pattern PATTERN_TKK = Pattern.compile("tkk:'(.+?)'");
 
-    private final HttpClient httpClient;
-    private final HttpRequest request;
-
     private final int[] tkk = new int[2];
-    private CompletableFuture<Void> tkkUpdateFuture;
 
     /**
-     * Constructs a {@code TokenAcquirer} with the given arguments.
+     * Constructs a {@code TokenAcquirer} with the given tkk string.
+     *
+     * @param tkkStr the tkk string.
+     */
+    public TokenAcquirer(String tkkStr) {
+        int dot = tkkStr.indexOf('.');
+        tkk[0] = (int) Long.parseLong(tkkStr, 0, dot, 10);
+        tkk[1] = (int) Long.parseLong(tkkStr, dot + 1, tkkStr.length(), 10);
+    }
+
+    /**
+     * Creates a {@code TokenAcquirer} with the given arguments.
      *
      * @param httpClient the {@code HttpClient} used for HTTP requests.
      * @param host the host of <i>Google Translate</i>.
      * @param requestTimeout the timeout of an HTTP request.
      */
-    public TokenAcquirer(HttpClient httpClient, String host, Duration requestTimeout) {
-        this.httpClient = Objects.requireNonNull(httpClient);
+    public static TokenAcquirer create(HttpClient httpClient, String host, Duration requestTimeout)
+            throws IOException, InterruptedException {
         HttpRequest.Builder b = HttpRequest.newBuilder()
                 .uri(URI.create("https://" + Objects.requireNonNull(host)))
                 .header("User-Agent", TransClient.USER_AGENT);
         if (requestTimeout != null)
             b.timeout(requestTimeout);
-        request = b.build();
-    }
+        HttpRequest req = b.build();
+        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
 
-    /**
-     * Tells whether the tkk has expired.
-     * <p>
-     * The tkk changes hourly on the page, but it seems that an old tkk
-     * can be used for quite a long time. Here it is regarded as expired
-     * immediately the hour when the tkk was acquired is ended.
-     */
-    private boolean tkkExpired() {
-        int curHours = (int) (System.currentTimeMillis() / 3600000);
-        return curHours != tkk[0];
-    }
-
-    /**
-     * Updates the tkk asynchronously.
-     */
-    private synchronized CompletableFuture<Void> updateTkkAsync() {
-        if (tkkUpdateFuture == null || (tkkUpdateFuture.isDone() && tkkExpired())) {
-            tkkUpdateFuture = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(this::updateTkk);
-        }
-        return tkkUpdateFuture;
-    }
-
-    private void updateTkk(HttpResponse<String> resp) {
         Matcher matcher = PATTERN_TKK.matcher(resp.body());
         if (!matcher.find())
             throw new RuntimeException("tkk not found");
-
         String tkkStr = matcher.group(1);
-        int dot = tkkStr.indexOf('.');
-        tkk[0] = (int) Long.parseLong(tkkStr, 0, dot, 10);
-        tkk[1] = (int) Long.parseLong(tkkStr, dot + 1, tkkStr.length(), 10);
+
+        return new TokenAcquirer(tkkStr);
     }
 
     /**
@@ -88,28 +65,8 @@ public final class TokenAcquirer {
      *
      * @param text the text.
      * @return the token.
-     * @throws IOException if an I/O error occurs in the HTTP request.
-     * @throws InterruptedException if the operation is interrupted.
      */
-    public String acquire(String text) throws IOException, InterruptedException {
-        try {
-            return acquireAsync(text).get();
-        } catch (ExecutionException e) {
-            throw Utils.toIOException(e);
-        }
-    }
-
-    /**
-     * Acquires a token by the given text asynchronously.
-     *
-     * @param text the text.
-     * @return a {@code CompletableFuture} of the token.
-     */
-    public CompletableFuture<String> acquireAsync(String text) {
-        return updateTkkAsync().thenApply((Void) -> calc(text));
-    }
-
-    private String calc(String text) {
+    public String acquire(String text) {
         int len = text.length();
         Reducer e = new Reducer(tkk[0]);
 
