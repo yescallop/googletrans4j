@@ -9,7 +9,7 @@ public class TransTest {
 
     public static void main(String[] args) throws Exception {
         TransClient client = TransClient.newBuilder()
-                .host("translate.google.cn")
+                .tokenHost("translate.google.cn")
                 .build();
 
         TransRequest req = TransRequest.newBuilder()

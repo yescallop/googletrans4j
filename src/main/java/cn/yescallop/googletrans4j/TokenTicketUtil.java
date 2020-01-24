@@ -11,38 +11,46 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A {@code TokenAcquirer} supplies tokens for <i>Google Translate</i> requests.
+ * A utility class for acquiring tokens and tickets for <i>Google Translate</i> requests.
+ * <p>
+ * Definitions:
+ * 1) token: tkk
+ * 2) ticket: tk
  *
  * @author Scallop Ye
  */
-public final class TokenAcquirer {
+public final class TokenTicketUtil {
 
     /**
-     * A {@code Pattern} matching the tkk in the page.
+     * A {@code Pattern} matching the token in the page.
      */
-    private static final Pattern PATTERN_TKK = Pattern.compile("tkk:'(.+?)'");
+    private static final Pattern PATTERN_TOKEN = Pattern.compile("tkk:'(.+?)'");
 
-    private final int[] tkk = new int[2];
-
-    /**
-     * Constructs a {@code TokenAcquirer} with the given tkk string.
-     *
-     * @param tkkStr the tkk string.
-     */
-    public TokenAcquirer(String tkkStr) {
-        int dot = tkkStr.indexOf('.');
-        tkk[0] = (int) Long.parseLong(tkkStr, 0, dot, 10);
-        tkk[1] = (int) Long.parseLong(tkkStr, dot + 1, tkkStr.length(), 10);
+    private TokenTicketUtil() {
+        //no instance
     }
 
     /**
-     * Creates a {@code TokenAcquirer} with the given arguments.
+     * Parses the token from a string into an int array.
+     *
+     * @param str the token string.
+     * @param token the int array.
+     */
+    public static void parseToken(String str, int[] token) {
+        int dot = str.indexOf('.');
+        token[0] = (int) Long.parseLong(str, 0, dot, 10);
+        token[1] = (int) Long.parseLong(str, dot + 1, str.length(), 10);
+    }
+
+    /**
+     * Acquires a token with the given arguments.
      *
      * @param httpClient the {@code HttpClient} used for HTTP requests.
      * @param host the host of <i>Google Translate</i>.
      * @param requestTimeout the timeout of an HTTP request.
+     * @return the token.
      */
-    public static TokenAcquirer create(HttpClient httpClient, String host, Duration requestTimeout)
+    public static String acquireToken(HttpClient httpClient, String host, Duration requestTimeout)
             throws IOException, InterruptedException {
         HttpRequest.Builder b = HttpRequest.newBuilder()
                 .uri(URI.create("https://" + Objects.requireNonNull(host)))
@@ -52,23 +60,27 @@ public final class TokenAcquirer {
         HttpRequest req = b.build();
         HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
 
-        Matcher matcher = PATTERN_TKK.matcher(resp.body());
+        Matcher matcher = PATTERN_TOKEN.matcher(resp.body());
         if (!matcher.find())
-            throw new RuntimeException("tkk not found");
-        String tkkStr = matcher.group(1);
+            throw new IOException("token not found");
+        return matcher.group(1);
+    }
 
-        return new TokenAcquirer(tkkStr);
+    public static String acquireToken(HttpClient httpClient, String host)
+            throws IOException, InterruptedException {
+        return acquireToken(httpClient, host, null);
     }
 
     /**
-     * Acquires a token by the given text.
+     * Acquires a ticket by the given text and token.
      *
      * @param text the text.
-     * @return the token.
+     * @param token the token.
+     * @return the ticket.
      */
-    public String acquire(String text) {
+    public static String acquireTicket(String text, int[] token) {
         int len = text.length();
-        Reducer e = new Reducer(tkk[0]);
+        Reducer e = new Reducer(token[0]);
 
         for (int g = 0; g < len; g++) {
             int h = text.codePointAt(g);
@@ -94,9 +106,9 @@ public final class TokenAcquirer {
         }
 
         int a = e.get();
-        a ^= tkk[1];
+        a ^= token[1];
         a = (int) ((a & 0xffffffffL) % 1000000);
-        return a + "." + (a ^ tkk[0]);
+        return a + "." + (a ^ token[0]);
     }
 
     private static int uo(int a, String b) {

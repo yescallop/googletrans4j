@@ -12,7 +12,8 @@ public class TransAsyncTest {
 
     public static void main(String[] args) {
         TransClient client = TransClient.newBuilder()
-                .host("translate.google.cn")
+                .token("438839.2101722932")
+//                .insecure()
                 .build();
 
         CompletableFuture<?>[] cfs = Stream.of("Así es la vida", "それは人生です", "这是生活", "It's life")

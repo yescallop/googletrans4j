@@ -10,11 +10,10 @@ import java.net.http.HttpClient;
 public class TokenTest {
 
     public static void main(String[] args) throws Exception {
-        TokenAcquirer ta = TokenAcquirer.create(
+        String token = TokenTicketUtil.acquireToken(
                 HttpClient.newHttpClient(),
-                "translate.google.cn",
-                null
+                "translate.google.cn"
         );
-        System.out.println(ta.acquire("测试：这里是Scallop"));
+        System.out.println(token);
     }
 }

@@ -66,12 +66,41 @@ public interface TransClient {
         /**
          * Sets the host of <i>Google Translate</i> for the client.
          * <p>
-         * If not invoked, "translate.google.com" will be used.
+         * If not invoked, "translate.googleapis.com" will be used.
          *
          * @param host the host.
          * @return this builder.
          */
         Builder host(String host);
+
+        /**
+         * Sets the token for the client.
+         *
+         * @param token the token.
+         * @return this builder.
+         * @see TransClient.Builder#tokenHost(String)
+         */
+        Builder token(String token);
+
+        /**
+         * Sets the host for acquiring token for the client.
+         * <p>
+         * If not invoked, "translate.google.com" will be used.
+         * If the token is already set, this method will not
+         * have any effect.
+         *
+         * @param host the token host.
+         * @return this builder.
+         * @see TransClient.Builder#token(String)
+         */
+        Builder tokenHost(String host);
+
+        /**
+         * Uses insecure HTTP connections for the client.
+         *
+         * @return this builder.
+         */
+        Builder insecure();
 
         /**
          * Builds the client.
@@ -103,6 +132,11 @@ public interface TransClient {
      * @return the host.
      */
     String host();
+
+    /**
+     * Returns whether this client uses insecure HTTP connections.
+     */
+    boolean isInsecure();
 
     /**
      * Sends the given request using this client.

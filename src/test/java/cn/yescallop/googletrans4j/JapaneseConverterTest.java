@@ -13,7 +13,8 @@ public class JapaneseConverterTest {
 
     public static void main(String[] args) {
         TransClient client = TransClient.newBuilder()
-                .host("translate.google.cn")
+                .token("438839.2101722932")
+                .insecure()
                 .build();
         JapaneseConverter jc = JapaneseConverter.create(client);
         try {

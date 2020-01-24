@@ -1,6 +1,6 @@
 package cn.yescallop.googletrans4j.internal;
 
-import cn.yescallop.googletrans4j.TokenAcquirer;
+import cn.yescallop.googletrans4j.TokenTicketUtil;
 import cn.yescallop.googletrans4j.TransClient;
 import cn.yescallop.googletrans4j.TransRequest;
 import cn.yescallop.googletrans4j.TransResponse;
@@ -25,7 +25,9 @@ public final class TransClientImpl implements TransClient {
     private final boolean isDefaultHttpClient;
     private final Duration requestTimeout;
     private final String host;
-    private final TokenAcquirer tokenAcquirer;
+    private final boolean insecure;
+
+    private final int[] token = new int[2];
 
     TransClientImpl(TransClientBuilderImpl builder) {
         if (builder.httpClient == null) {
@@ -37,11 +39,19 @@ public final class TransClientImpl implements TransClient {
         }
         requestTimeout = builder.requestTimeout;
         host = builder.host;
-        try {
-            tokenAcquirer = TokenAcquirer.create(httpClient, host, requestTimeout);
-        } catch (Exception e) {
-            throw new RuntimeException("Exception creating TokenAcquirer instance", e);
+        insecure = builder.insecure;
+
+        String tokenStr;
+        if (builder.token != null) {
+            tokenStr = builder.token;
+        } else {
+            try {
+                tokenStr = TokenTicketUtil.acquireToken(httpClient, builder.tokenHost, requestTimeout);
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException("Exception acquiring token", e);
+            }
         }
+        TokenTicketUtil.parseToken(tokenStr, token);
     }
 
     @Override
@@ -60,18 +70,23 @@ public final class TransClientImpl implements TransClient {
     }
 
     @Override
+    public boolean isInsecure() {
+        return insecure;
+    }
+
+    @Override
     public TransResponse send(TransRequest request) throws IOException, InterruptedException {
-        String token = tokenAcquirer.acquire(request.text());
-        HttpRequest hr = HttpRequests.translating(this, request, token);
+        String ticket = TokenTicketUtil.acquireTicket(request.text(), token);
+        HttpRequest hr = HttpRequests.translating(this, request, ticket);
         String json = httpClient.send(hr, HttpResponse.BodyHandlers.ofString()).body();
         return TransResponse.parse(json);
     }
 
     @Override
     public CompletableFuture<TransResponse> sendAsync(TransRequest request) {
-        String token = tokenAcquirer.acquire(request.text());
+        String ticket = TokenTicketUtil.acquireTicket(request.text(), token);
         return httpClient.sendAsync(
-                HttpRequests.translating(this, request, token),
+                HttpRequests.translating(this, request, ticket),
                 HttpResponse.BodyHandlers.ofString())
                 .thenApply(resp -> TransResponse.parse(resp.body()));
     }

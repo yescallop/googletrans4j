@@ -5,6 +5,7 @@ import cn.yescallop.googletrans4j.TransParameter;
 import cn.yescallop.googletrans4j.TransRequest;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
@@ -21,8 +22,8 @@ public final class HttpRequests {
         //no instance
     }
 
-    public static HttpRequest translating(TransClient client, TransRequest request, String token) {
-        URI uri = buildTranslateURI(client.host(), request, token);
+    public static HttpRequest translating(TransClient client, TransRequest request, String ticket) {
+        URI uri = buildTranslateURI(client, request, ticket);
         String query = "q=" + URLEncoder.encode(request.text(), StandardCharsets.UTF_8);
         HttpRequest.Builder b = HttpRequest.newBuilder(uri)
                 .header("User-Agent", TransClient.USER_AGENT)
@@ -32,11 +33,20 @@ public final class HttpRequests {
         return b.build();
     }
 
-    private static URI buildTranslateURI(String host,
+    private static URI buildTranslateURI(TransClient client,
                                          TransRequest req,
-                                         String token) {
-        URIBuilder b = new URIBuilder("https://" + host + "/translate_a/single")
-                .parameter("client", "webapp")
+                                         String ticket) {
+        URI base;
+        try {
+            base = new URI(client.isInsecure() ? "http" : "https",
+                    client.host(),
+                    "/translate_a/single",
+                    null);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
+        URIBuilder b = new URIBuilder(base)
+                .parameter("client", "t")
                 .parameter("sl", req.sourceLang())
                 .parameter("tl", req.targetLang());
         Set<TransParameter> params = req.parameters();
@@ -49,6 +59,6 @@ public final class HttpRequests {
                 b.parameter("dt", TransParameter.TRANSLATION.value());
             }
         }
-        return b.parameter("tk", token).toURI();
+        return b.parameter("tk", ticket).toURI();
     }
 }

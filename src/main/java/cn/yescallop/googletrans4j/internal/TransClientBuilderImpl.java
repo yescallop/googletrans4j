@@ -15,7 +15,10 @@ public final class TransClientBuilderImpl implements TransClient.Builder {
 
     HttpClient httpClient;
     Duration requestTimeout;
-    String host = "translate.google.com";
+    String host = "translate.googleapis.com";
+    String token;
+    String tokenHost = "translate.google.com";
+    boolean insecure = false;
 
     @Override
     public TransClientBuilderImpl httpClient(HttpClient client) {
@@ -34,6 +37,24 @@ public final class TransClientBuilderImpl implements TransClient.Builder {
     @Override
     public TransClientBuilderImpl host(String host) {
         this.host = Objects.requireNonNull(host);
+        return this;
+    }
+
+    @Override
+    public TransClient.Builder token(String token) {
+        this.token = Objects.requireNonNull(token);
+        return this;
+    }
+
+    @Override
+    public TransClient.Builder tokenHost(String host) {
+        tokenHost = Objects.requireNonNull(host);
+        return this;
+    }
+
+    @Override
+    public TransClient.Builder insecure() {
+        insecure = true;
         return this;
     }
 
