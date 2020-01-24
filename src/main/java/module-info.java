@@ -5,7 +5,7 @@
  */
 module cn.yescallop.googletrans4j {
     requires java.net.http;
-    requires gson;
+    requires com.google.gson;
 
     exports cn.yescallop.googletrans4j;
     exports cn.yescallop.googletrans4j.util;
