@@ -46,5 +46,5 @@ ss | 11 | synonyms
 t | 0 | translation
 gt | 18 | unknown
 
-[1]: src/main/java/cn/yescallop/googletrans4j/TokenAcquirer.java
+[1]: src/main/java/cn/yescallop/googletrans4j/TokenTicketUtil.java
 [2]: src/main/java/cn/yescallop/googletrans4j/TransParameter.java
