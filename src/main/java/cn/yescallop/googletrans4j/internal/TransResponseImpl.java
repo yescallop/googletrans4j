@@ -25,7 +25,7 @@ public final class TransResponseImpl implements TransResponse {
 
     private String sourceLang;
     private String translation;
-    private String[] transliterations = new String[2];
+    private final String[] transliterations = new String[2];
     private Map<String, Float> langDetection;
 
     public TransResponseImpl(String json) {
@@ -117,7 +117,7 @@ public final class TransResponseImpl implements TransResponse {
 
     @Override
     public String toString() {
-        return "TransResponseImpl{" +
+        return "TransResponse{" +
                 "sourceLang='" + sourceLang + '\'' +
                 ", translation='" + translation + '\'' +
                 ", transliterations=" + Arrays.toString(transliterations) +

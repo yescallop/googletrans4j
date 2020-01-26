@@ -36,7 +36,7 @@ public interface TransRequest {
      * @param text the text.
      * @return a new request.
      */
-    static TransRequest detecting(String text) {
+    static TransRequest langDetecting(String text) {
         return newBuilder(text)
                 .parameters()
                 .build();

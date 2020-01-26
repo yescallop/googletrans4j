@@ -55,9 +55,6 @@ public final class HttpRequests {
             b.parameter("dt", params.stream()
                     .map(TransParameter::value)
                     .toArray(String[]::new));
-            if (params.contains(TransParameter.TRANSLITERATION)) {
-                b.parameter("dt", TransParameter.TRANSLATION.value());
-            }
         }
         return b.parameter("tk", ticket).toURI();
     }

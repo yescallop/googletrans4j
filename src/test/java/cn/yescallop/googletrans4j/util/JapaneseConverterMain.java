@@ -1,6 +1,6 @@
-package cn.yescallop.googletrans4j;
+package cn.yescallop.googletrans4j.util;
 
-import cn.yescallop.googletrans4j.util.JapaneseConverter;
+import cn.yescallop.googletrans4j.TransClient;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,7 +9,7 @@ import java.nio.file.Path;
 /**
  * @author Scallop Ye
  */
-public class JapaneseConverterTest {
+public class JapaneseConverterMain {
 
     public static void main(String[] args) {
         TransClient client = TransClient.newBuilder()

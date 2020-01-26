@@ -88,7 +88,6 @@ public final class JapaneseConverter {
         TransRequest req = TransRequest.newBuilder(line)
                 .parameters(TransParameter.TRANSLITERATION)
                 .sourceLang("ja")
-                .targetLang("ja")
                 .build();
         TransResponse resp;
         try {
@@ -97,11 +96,26 @@ public final class JapaneseConverter {
             e.printStackTrace();
             return null;
         }
-        res.transliteration = resp.sourceTransliteration()
-                .map(String::toLowerCase)
-                .orElse(null);
-        if (res.transliteration == null)
+        if (resp.sourceTransliteration().isEmpty())
             return res;
+        res.transliteration = resp.sourceTransliteration()
+                .get().toLowerCase();
+        try {
+            res.kana = romajiToKana(res.transliteration);
+        } catch (Exception e) {
+            res.exception = e;
+            return res;
+        }
+        List<Integer> indexes = new ArrayList<>();
+        res.regex = kanaToRegex(line, indexes);
+        res.kanaNoted = noteKana(res.raw, res.kana, res.regex, indexes);
+        return res;
+    }
+
+    protected static Line convert(String line, String transliteration) {
+        Line res = new Line();
+        res.raw = line;
+        res.transliteration = transliteration;
         try {
             res.kana = romajiToKana(res.transliteration);
         } catch (Exception e) {
