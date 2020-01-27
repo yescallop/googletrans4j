@@ -45,6 +45,13 @@ public interface TransResponse {
     String sourceLang();
 
     /**
+     * Returns the confidence of translation.
+     *
+     * @return the confidence.
+     */
+    float confidence();
+
+    /**
      * Returns an {@code Optional} containing the translation text.
      *
      * @return an {@code Optional<String>}.

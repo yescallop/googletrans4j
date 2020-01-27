@@ -24,6 +24,7 @@ public final class TransResponseImpl implements TransResponse {
     private final JsonArray arr;
 
     private String sourceLang;
+    private float confidence;
     private String translation;
     private final String[] transliterations = new String[2];
     private Map<String, Float> langDetection;
@@ -42,6 +43,7 @@ public final class TransResponseImpl implements TransResponse {
 
     private void parse() {
         sourceLang = arr.get(2).getAsString();
+        confidence = arr.get(6).getAsFloat();
         if (arr.get(0).isJsonArray()) {
             parseTranslation(GSON.fromJson(arr.get(0), JsonArray[].class));
         }
@@ -93,6 +95,11 @@ public final class TransResponseImpl implements TransResponse {
     @Override
     public String sourceLang() {
         return sourceLang;
+    }
+
+    @Override
+    public float confidence() {
+        return confidence;
     }
 
     @Override

@@ -2,8 +2,6 @@ package cn.yescallop.googletrans4j;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.platform.commons.annotation.Testable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;

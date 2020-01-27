@@ -1,9 +1,6 @@
 package cn.yescallop.googletrans4j.internal;
 
-import cn.yescallop.googletrans4j.TokenTicketUtil;
-import cn.yescallop.googletrans4j.TransClient;
-import cn.yescallop.googletrans4j.TransRequest;
-import cn.yescallop.googletrans4j.TransResponse;
+import cn.yescallop.googletrans4j.*;
 import cn.yescallop.googletrans4j.internal.util.HttpRequests;
 
 import java.io.IOException;
@@ -77,9 +74,9 @@ public final class TransClientImpl implements TransClient {
     @Override
     public TransResponse send(TransRequest request) throws IOException, InterruptedException {
         String ticket = TokenTicketUtil.acquireTicket(request.text(), token);
-        HttpRequest hr = HttpRequests.translating(this, request, ticket);
-        String json = httpClient.send(hr, HttpResponse.BodyHandlers.ofString()).body();
-        return TransResponse.parse(json);
+        HttpRequest req = HttpRequests.translating(this, request, ticket);
+        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+        return parse(resp);
     }
 
     @Override
@@ -88,6 +85,19 @@ public final class TransClientImpl implements TransClient {
         return httpClient.sendAsync(
                 HttpRequests.translating(this, request, ticket),
                 HttpResponse.BodyHandlers.ofString())
-                .thenApply(resp -> TransResponse.parse(resp.body()));
+                .thenApply(TransClientImpl::parse);
+    }
+
+    private static TransResponse parse(HttpResponse<String> resp) {
+        int code = resp.statusCode();
+        switch (code) {
+            case 200:
+                return TransResponse.parse(resp.body());
+            case 302:
+                throw new ResponseUnavailableException("302 Moved: unusual traffic detected by Google");
+            case 403:
+                throw new ResponseUnavailableException("403 Forbidden: check your token or report an issue");
+        }
+        throw new ResponseUnavailableException("Server responded with status code " + code);
     }
 }

@@ -66,11 +66,6 @@ public final class TokenTicketUtil {
         return matcher.group(1);
     }
 
-    public static String acquireToken(HttpClient httpClient, String host)
-            throws IOException, InterruptedException {
-        return acquireToken(httpClient, host, null);
-    }
-
     /**
      * Acquires a ticket by the given text and token.
      *
