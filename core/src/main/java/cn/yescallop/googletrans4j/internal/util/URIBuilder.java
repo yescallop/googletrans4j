@@ -1,7 +1,6 @@
 package cn.yescallop.googletrans4j.internal.util;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * A builder for {@link URI} with query parameters.
@@ -14,8 +13,10 @@ public final class URIBuilder {
     private final QueryBuilder queryBuilder;
 
     public URIBuilder(URI baseUri) {
+        if (baseUri.isOpaque())
+            throw new IllegalArgumentException("opaque base URI");
         this.baseUri = baseUri;
-        queryBuilder = new QueryBuilder(baseUri.getQuery());
+        queryBuilder = new QueryBuilder(baseUri.getRawQuery());
     }
 
     public URIBuilder(String baseUri) {
@@ -33,21 +34,35 @@ public final class URIBuilder {
     }
 
     public URI toURI() {
-        try {
-            return new URI(
-                    baseUri.getScheme(),
-                    baseUri.getAuthority(),
-                    baseUri.getPath(),
-                    queryBuilder.toString(),
-                    baseUri.getFragment()
-            );
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        }
+        return URI.create(toString());
     }
 
     @Override
     public String toString() {
-        return toURI().toASCIIString();
+        StringBuilder sb = new StringBuilder();
+        String scheme = baseUri.getScheme();
+        if (scheme != null) {
+            sb.append(scheme);
+            sb.append(':');
+        }
+        String authority = baseUri.getRawAuthority();
+        if (authority != null) {
+            sb.append("//");
+            sb.append(authority);
+        }
+        String path = baseUri.getRawPath();
+        if (path != null) {
+            sb.append(path);
+        }
+        if (!queryBuilder.empty()) {
+            sb.append('?');
+            queryBuilder.appendTo(sb);
+        }
+        String fragment = baseUri.getRawFragment();
+        if (fragment != null) {
+            sb.append('#');
+            sb.append(fragment);
+        }
+        return sb.toString();
     }
 }

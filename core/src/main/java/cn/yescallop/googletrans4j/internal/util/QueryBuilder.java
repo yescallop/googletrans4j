@@ -1,5 +1,7 @@
 package cn.yescallop.googletrans4j.internal.util;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -30,19 +32,27 @@ public final class QueryBuilder {
         );
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = base == null ? new StringBuilder() : new StringBuilder(base);
+    public boolean empty() {
+        return base == null && paramsMap.isEmpty();
+    }
+
+    public void appendTo(StringBuilder sb) {
+        boolean first;
+        if (base != null) {
+            sb.append(base);
+            first = false;
+        } else first = true;
+
         for (Map.Entry<String, List<String>> e : paramsMap.entrySet()) {
+            String name = URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8);
             for (String value : e.getValue()) {
-                if (sb.length() != 0) {
-                    sb.append('&');
-                }
-                sb.append(e.getKey());
+                if (!first) sb.append('&');
+                else first = false;
+
+                sb.append(name);
                 sb.append('=');
-                sb.append(value);
+                sb.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
             }
         }
-        return sb.toString();
     }
 }

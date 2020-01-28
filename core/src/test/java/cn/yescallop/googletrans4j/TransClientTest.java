@@ -1,9 +1,7 @@
 package cn.yescallop.googletrans4j;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import java.net.http.HttpClient;
 import java.util.concurrent.CompletableFuture;
@@ -17,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * @author Scallop Ye
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TransClientTest {
 
     private static HttpClient httpClient;

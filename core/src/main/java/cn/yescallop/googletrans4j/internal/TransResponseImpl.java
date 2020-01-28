@@ -126,6 +126,7 @@ public final class TransResponseImpl implements TransResponse {
     public String toString() {
         return "TransResponse{" +
                 "sourceLang='" + sourceLang + '\'' +
+                ", confidence=" + confidence +
                 ", translation='" + translation + '\'' +
                 ", transliterations=" + Arrays.toString(transliterations) +
                 ", langDetection=" + langDetection +

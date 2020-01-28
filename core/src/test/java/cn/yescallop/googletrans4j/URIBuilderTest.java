@@ -12,12 +12,11 @@ public class URIBuilderTest {
 
     @Test
     public void build() {
-        URIBuilder b = new URIBuilder("https://yescallop.cn/test")
-                .parameter("k1", "v1")
-                .parameter("k2", "v2")
-                .parameter("键", new String[]{"值1", "值2"});
+        URIBuilder b = new URIBuilder("https://yescallop.cn/test?k=v#l")
+                .parameter("k1", "值1")
+                .parameter("k2", new String[]{"v%1", "v&2"});
 
-        assertEquals("https://yescallop.cn/test?k1=v1&k2=v2&%E9%94%AE=%E5%80%BC1&%E9%94%AE=%E5%80%BC2",
+        assertEquals("https://yescallop.cn/test?k=v&k1=%E5%80%BC1&k2=v%251&k2=v%262#l",
                 b.toString());
     }
 }
